@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+crypto-bigint = "0.5.5"
+crypto-primes = "0.5.0"
+env_logger = "0.10.1"
 is_prime = "2.0.9"
 log = "0.4.20"
 num = "0.4.1"

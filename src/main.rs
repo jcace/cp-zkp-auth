@@ -1,10 +1,6 @@
+use num::{abs, bigint::ToBigInt, BigInt, One};
+
 mod param_init;
-
-use is_prime::is_prime;
-use num::bigint::*;
-use std::str::FromStr;
-
-use crate::param_init::{check_if_group_prime_order, find_generators};
 
 // https://docs.rs/static-dh-ecdh/latest/static_dh_ecdh/constants/constant.DH_GROUP_5_EXPONENT_LENGTH.html
 // RFC 3526 - https://www.rfc-editor.org/rfc/rfc3526#section-2
@@ -20,38 +16,70 @@ use crate::param_init::{check_if_group_prime_order, find_generators};
 */
 
 fn main() {
-    // Example use (replace with actual prime generation)
-    // let p: BigUint = 101.to_biguint().unwrap(); // A small prime number for demonstration
+    env_logger::init();
 
-    let big_prime_str =
-        "42765216643065397982265462252423826320512529931694366715111734768493812630447";
+    let params = param_init::generate_params();
+    println!("p: {:?}", params);
 
-    if !is_prime(big_prime_str) {
-        panic!("{} is not prime", big_prime_str);
+    // secret
+    let x = 6969u128.to_bigint().unwrap();
+
+    // y1, y2
+    let y1 = params.g.modpow(&x, &params.p);
+    let y2 = params.h.modpow(&x, &params.p);
+
+    // k
+    let k = 420u128.to_bigint().unwrap(); // todo: random
+
+    // r1, r2
+    let r1 = params.g.modpow(&k, &params.p);
+    let r2 = params.h.modpow(&k, &params.p);
+
+    //* r1, r2 ----> verifier
+    // on verifier
+    let c = 1288u128.to_bigint().unwrap(); // todo: random
+
+    //* c ----> prover
+    let s;
+    let c_mul_x = &c * &x;
+    if k > c_mul_x {
+        s = (k - &c_mul_x) % &params.q;
+    } else {
+        s = &params.q - (c_mul_x - k) % &params.q;
     }
+    // let s = abs(k - &c * x) % params.q;
 
-    let p = BigUint::from_str(big_prime_str).unwrap();
+    //* s ---> verifier
+    // on verifier
+    let y1_prime = (params.g.modpow(&s, &params.p) * &y1.modpow(&c, &params.p))
+        .modpow(&BigInt::one(), &params.p);
 
-    println!("prime: {}", p);
-    // match find_generators(&p) {
-    //     Some((g, h)) => println!("Generators found: g = {}, h = {}", g, h),
-    //     None => println!("No generators found"),
-    // }
+    let y2_prime = (params.h.modpow(&s, &params.p) * &y2.modpow(&c, &params.p))
+        .modpow(&BigInt::one(), &params.p);
 
-    let test = check_if_group_prime_order(&p);
-    println!("Is group prime order? {}", test);
+    log::debug!(
+        "
+    y1: {}
+    y2: {}
+    r1: {}
+    r2: {}
+    c: {}
+    s: {}
+    y1_prime: {}
+    y2_prime: {}
+    ",
+        &y1,
+        &y2,
+        r1,
+        r2,
+        c,
+        s,
+        y1_prime,
+        y2_prime
+    );
 
-    // println!("Hello, world!");
+    assert_eq!(r1, y1_prime);
+    assert_eq!(r2, y2_prime);
 
-    // let p: crypto_bigint::Uint<2> = generate_prime(Some(128));
-
-    // // Setup phase
-    // // 1536-bit group
-    // // let p = 2u128.pow(1536) - 2u128.pow(1472) - 1 + 2u128.pow(64) * ((2u128.pow(1406) + 741804) / 2u128.pow(1406));
-    // // let p = U1536::from_be_hex(DH_GROUP_5_PRIME);
-    // // let g = DH_GROUP_5_GENERATOR;
-    // println!("p: {}", p);
-    // // let g = 2;
-
-    // log::debug!("Commitment phase");
+    log::info!("success! {} == {}, {} == {}", r1, y1_prime, r2, y2_prime);
 }
