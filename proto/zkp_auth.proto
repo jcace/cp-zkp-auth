@@ -1,5 +1,6 @@
 syntax = "proto3";
 package zkp_auth;
+
 message RegisterRequest {
   string user = 1;
   int64 y1 = 2;

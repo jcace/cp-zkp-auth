@@ -1,23 +1,55 @@
-use num::{abs, bigint::ToBigInt, BigInt, One};
+use num::{bigint::ToBigInt, BigInt, One};
 
+mod client;
 mod param_init;
+mod server;
+use clap::{command, Arg, Command};
 
-// https://docs.rs/static-dh-ecdh/latest/static_dh_ecdh/constants/constant.DH_GROUP_5_EXPONENT_LENGTH.html
-// RFC 3526 - https://www.rfc-editor.org/rfc/rfc3526#section-2
-// static DH_GROUP_5_PRIME: &str = "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3DC2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F83655D23DCA3AD961C62F356208552BB9ED529077096966D670C354E4ABC9804F1746C08CA237327FFFFFFFFFFFFFFFF";
-// static DH_GROUP_5_GENERATOR: usize = 2;
-// static DH_GROUP_5_EXPONENT_LENGTH: usize = 192;
-
-/**
-*      p: BigInt::from_str("42765216643065397982265462252423826320512529931694366715111734768493812630447").unwrap(),
-       q: BigInt::from_str("21382608321532698991132731126211913160256264965847183357555867384246906315223").unwrap(),
-       g: BigInt::from_str("4").unwrap(),
-       h: BigInt::from_str("9").unwrap(),
-*/
-
-fn main() {
+#[tokio::main]
+async fn main() {
     env_logger::init();
 
+    let matches = command!()
+        .subcommand_required(true)
+        .subcommand(
+            Command::new("server").about("run zkp auth server").arg(
+                Arg::new("addr")
+                    .default_value("127.0.0.1:8080")
+                    // .required(true)
+                    .alias("a"),
+            ),
+        )
+        .subcommand(
+            Command::new("client").about("run zkp auth client").arg(
+                Arg::new("server")
+                    .default_value("127.0.0.1:8080")
+                    .alias("s"),
+            ),
+        )
+        .get_matches();
+
+    match matches.subcommand() {
+        Some(("server", sub_matches)) => {
+            let addr = sub_matches
+                .get_one::<String>("addr")
+                .expect("server listen address is required");
+
+            server::run_server(addr).await;
+        }
+        Some(("client", sub_matches)) => {
+            let addr = sub_matches
+                .get_one::<String>("server")
+                .expect("server address is required");
+
+            client::run_client(addr).await;
+        }
+        _ => unreachable!("Exhausted list of subcommands and subcommand_required prevents `None`"),
+    }
+
+    sandbox_run();
+}
+
+fn sandbox_run() {
     let params = param_init::generate_params();
     println!("p: {:?}", params);
 
