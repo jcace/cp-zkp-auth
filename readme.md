@@ -9,6 +9,11 @@ https://crypto.stackexchange.com/questions/99262/chaum-pedersen-protocol
 - Split up client/server into completely different packages for separate deployment (together now for ease of use / simplicity)
 
 
+## Client
+> Input: x (a number) password
+
+Client generates params - more trustless than server side generation?
+
 
 ## scratchpad notes
 // https://docs.rs/static-dh-ecdh/latest/static_dh_ecdh/constants/constant.DH_GROUP_5_EXPONENT_LENGTH.html
