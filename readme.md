@@ -5,8 +5,11 @@ q = "prime order" i.e, what number where g^q mod p and h^q mod p both = 1 and q 
 
 https://crypto.stackexchange.com/questions/99262/chaum-pedersen-protocol
 
-## Improvements
-- Split up client/server into completely different packages for separate deployment (together now for ease of use / simplicity)
+## Generating Parameters
+Shared parameters for the protocol are loaded in via the environment (or, a `.env` file in the same directory). A sample set of initial parameters is provided in the included `.env` file, however if you would like to generate fresh ones you can run
+```bash
+./zkp-auth generate .env # output file path
+```
 
 
 ## Client
@@ -28,3 +31,6 @@ Client generates params - more trustless than server side generation?
        g: BigInt::from_str("4").unwrap(),
        h: BigInt::from_str("9").unwrap(),
 */
+
+## Improvements
+- Split up client/server into completely different packages for separate deployment (together now for ease of use / simplicity)

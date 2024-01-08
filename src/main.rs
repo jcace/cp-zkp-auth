@@ -1,13 +1,18 @@
+use std::{env, fs::File};
+
 use num::{bigint::ToBigInt, BigInt, One};
 
 mod client;
-mod param_init;
+mod cp_params;
 mod server;
-use clap::{command, Arg, Command};
+use clap::{arg, command, Arg, Command};
+use dotenv::dotenv;
+use rpassword::read_password;
 
 #[tokio::main]
 async fn main() {
     env_logger::init();
+    dotenv().ok(); // for convenience, auto-load from .env file if it exists
 
     let matches = command!()
         .subcommand_required(true)
@@ -20,11 +25,21 @@ async fn main() {
             ),
         )
         .subcommand(
-            Command::new("client").about("run zkp auth client").arg(
+            Command::new("client").about("run zkp auth client").args([
                 Arg::new("server")
                     .default_value("127.0.0.1:8080")
                     .alias("s"),
-            ),
+                Arg::new("user").default_value("user").alias("u"),
+                Arg::new("password").alias("p"),
+            ]),
+        )
+        .subcommand(
+            Command::new("generate")
+                .about("generate a fresh set of Chaum-Pederson params")
+                .args([Arg::new("out")
+                    .alias("o")
+                    .required(false)
+                    .help("output .env file directory")]),
         )
         .get_matches();
 
@@ -41,16 +56,58 @@ async fn main() {
                 .get_one::<String>("server")
                 .expect("server address is required");
 
-            client::run_client(addr).await;
+            let user = sub_matches
+                .get_one::<String>("user")
+                .expect("username is required");
+
+            let password = sub_matches.get_one::<i64>("password");
+
+            let password = match password {
+                Some(p) => Some(p.to_owned()), // If password is already provided via args, use it.
+                None => {
+                    println!("Enter password: ");
+                    match read_password()
+                        .expect("Failed to read password")
+                        .parse::<i64>()
+                    {
+                        Ok(parsed_password) => Some(parsed_password),
+                        Err(_) => {
+                            eprintln!("Error: Password must be a number.");
+                            None
+                        }
+                    }
+                }
+            };
+
+            client::run_client(addr, user, &password.unwrap()).await;
+        }
+        Some(("generate", sub_matches)) => {
+            let out = sub_matches.get_one::<String>("out");
+
+            let p = cp_params::generate_params();
+
+            match out {
+                Some(out) => {
+                    let current_dir = env::current_dir().expect("Failed to get current directory");
+                    let full_path = current_dir.join(out);
+                    let mut file = File::create(full_path).expect("Failed to open file");
+
+                    p.to_env_file(&mut file)
+                        .expect("failed to params to env file");
+                }
+                None => {
+                    println!("{}", p);
+                }
+            }
         }
         _ => unreachable!("Exhausted list of subcommands and subcommand_required prevents `None`"),
     }
 
-    sandbox_run();
+    // sandbox_run();
 }
 
 fn sandbox_run() {
-    let params = param_init::generate_params();
+    let params = cp_params::generate_params();
     println!("p: {:?}", params);
 
     // secret
