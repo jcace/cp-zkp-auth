@@ -8,10 +8,10 @@ use num_bigint::RandBigInt;
 use std::{fmt::Display, io::Write, ops::Sub, str::FromStr};
 static MAX_GENERATION_ATTEMPTS: i32 = 10;
 
-static PARAMS_P_ENV: &str = "CP_P";
-static PARAMS_Q_ENV: &str = "CP_Q";
-static PARAMS_G_ENV: &str = "CP_G";
-static PARAMS_H_ENV: &str = "CP_H";
+static ENV_PARAMS_P: &str = "CP_P";
+static ENV_PARAMS_Q: &str = "CP_Q";
+static ENV_PARAMS_G: &str = "CP_G";
+static ENV_PARAMS_H: &str = "CP_H";
 
 #[derive(Debug)]
 pub struct ChaumPedersenParams {
@@ -33,10 +33,10 @@ impl ChaumPedersenParams {
     }
 
     pub fn new_from_env() -> Self {
-        let p = BigInt::from_str(&std::env::var(PARAMS_P_ENV).unwrap()).unwrap();
-        let q = BigInt::from_str(&std::env::var(PARAMS_Q_ENV).unwrap()).unwrap();
-        let g = BigInt::from_str(&std::env::var(PARAMS_G_ENV).unwrap()).unwrap();
-        let h = BigInt::from_str(&std::env::var(PARAMS_H_ENV).unwrap()).unwrap();
+        let p = BigInt::from_str(&std::env::var(ENV_PARAMS_P).unwrap()).unwrap();
+        let q = BigInt::from_str(&std::env::var(ENV_PARAMS_Q).unwrap()).unwrap();
+        let g = BigInt::from_str(&std::env::var(ENV_PARAMS_G).unwrap()).unwrap();
+        let h = BigInt::from_str(&std::env::var(ENV_PARAMS_H).unwrap()).unwrap();
 
         ChaumPedersenParams { p, q, g, h }
     }
@@ -48,13 +48,13 @@ impl ChaumPedersenParams {
         out.write(
             format!(
                 "{}={}\n{}={}\n{}={}\n{}={}",
-                PARAMS_P_ENV,
+                ENV_PARAMS_P,
                 self.p,
-                PARAMS_Q_ENV,
+                ENV_PARAMS_Q,
                 self.q,
-                PARAMS_G_ENV,
+                ENV_PARAMS_G,
                 self.g,
-                PARAMS_H_ENV,
+                ENV_PARAMS_H,
                 self.h,
             )
             .as_bytes(),

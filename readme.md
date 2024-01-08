@@ -34,3 +34,4 @@ Client generates params - more trustless than server side generation?
 
 ## Improvements
 - Split up client/server into completely different packages for separate deployment (together now for ease of use / simplicity)
+- Backend user session tracking - can only register once. Maybe allow a method for user to overwrite their y1/y2 params

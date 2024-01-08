@@ -2,6 +2,7 @@ use std::{env, fs::File};
 
 use num::{bigint::ToBigInt, BigInt, One};
 
+mod auth_db;
 mod client;
 mod cp_params;
 mod server;

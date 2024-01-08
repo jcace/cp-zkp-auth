@@ -1,4 +1,4 @@
-use num::{bigint::ToBigInt, traits::ToBytes, BigInt};
+use num::bigint::ToBigInt;
 use tonic::transport::Channel;
 
 use crate::{
