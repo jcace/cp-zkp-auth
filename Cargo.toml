@@ -18,6 +18,8 @@ rpassword = "7.3.1"
 rand = "0.8"
 num-bigint = { version = "0.4", features = ["rand"] }
 dotenv = "0.15.0"
+uuid = { version = "1.6.1", features = ["v4"] }
+rand_core = "0.6.4"
 
 [build-dependencies]
 tonic-build = "0.10.2"

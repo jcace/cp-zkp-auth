@@ -2,9 +2,9 @@ use std::{env, fs::File};
 
 use num::{bigint::ToBigInt, BigInt, One};
 
-mod auth_db;
 mod client;
 mod cp_params;
+mod db;
 mod server;
 use clap::{arg, command, Arg, Command};
 use dotenv::dotenv;
