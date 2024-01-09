@@ -16,7 +16,7 @@ pub mod zkp_auth {
 }
 
 pub async fn run_client(addr: &str, user: &str, secret: &i64) {
-    let mut c = Client::new(addr, "a".to_string()).await;
+    let mut c = Client::new(addr, user.to_string()).await;
 
     let params = cp_params::ChaumPedersenParams::new_from_env();
     let (y1, y2) = params.y1_y2(&secret.to_bigint().unwrap());
@@ -27,15 +27,17 @@ pub async fn run_client(addr: &str, user: &str, secret: &i64) {
 
     println!("res: {:?}", res);
 
-    // let res = c
-    //     .create_authentication_challenge(4i64.to_be_bytes(), 5.to_be_bytes())
-    //     .await;
-    // println!("res: {:?}", res);
+    let res = c
+        .create_authentication_challenge(4i64.to_be_bytes().to_vec(), 5i64.to_be_bytes().to_vec())
+        .await;
+    println!("res: {:?}", res);
 
-    // let res = c
-    //     .verify_authentication(4.to_be_bytes(), "123".to_string())
-    //     .await;
-    // println!("res: {:?}", res);
+    let auth_id = res.auth_id;
+
+    let res = c
+        .verify_authentication(4i64.to_be_bytes().to_vec(), auth_id)
+        .await;
+    println!("res: {:?}", res);
 }
 
 pub struct Client {

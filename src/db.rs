@@ -7,18 +7,18 @@ use tokio::sync::Mutex;
 pub struct AuthChallenge {
     pub auth_id: String,
     pub user_id: String,
-    r1: BigInt,
-    r2: BigInt,
-    c: BigInt,
-    s: Option<BigInt>,
-    session_id: Option<String>,
+    pub r1: BigInt,
+    pub r2: BigInt,
+    pub c: BigInt,
+    pub s: Option<BigInt>,
+    pub session_id: Option<String>,
 }
 
 #[derive(Debug)]
 pub struct User {
-    user_id: String,
-    y1: BigInt,
-    y2: BigInt,
+    pub user_id: String,
+    pub y1: BigInt,
+    pub y2: BigInt,
 }
 
 pub fn generate_uuid() -> String {
@@ -39,7 +39,8 @@ impl AuthChallenge {
         }
     }
 
-    pub fn finalize_challenge(&mut self, s: BigInt, session_id: String) {
+    pub fn finalize_challenge(&mut self, s: BigInt) {
+        let session_id = generate_uuid();
         self.s = Some(s);
         self.session_id = Some(session_id);
     }
@@ -78,10 +79,6 @@ impl InMemoryDB {
     pub async fn get_challenge(&self, s: &str) -> Option<&Arc<Mutex<AuthChallenge>>> {
         self.challenges.get(s)
     }
-
-    // pub fn delete(&mut self, s: &str) {
-    //     self.users.remove(s);
-    // }
 }
 
 impl User {

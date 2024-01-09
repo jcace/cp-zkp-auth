@@ -1,14 +1,14 @@
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
-use num::{bigint::Sign, BigInt, Zero};
-use num_bigint::{RandBigInt, ToBigInt};
+use num::{bigint::Sign, BigInt, One};
+use num_bigint::ToBigInt;
 use rand_core::{OsRng, RngCore};
 use tokio::sync::Mutex;
 use tonic::{transport::Server, Request, Response, Status};
 
 use crate::{
     cp_params::{self, ChaumPedersenParams},
-    db::{AuthChallenge, InMemoryDB, User},
+    db::{AuthChallenge, InMemoryDB},
 };
 
 use self::zkp_auth::{
@@ -107,17 +107,53 @@ impl auth_server::Auth for ZkpAuthService {
         let s = BigInt::from_bytes_be(Sign::Plus, &r.s);
         let auth_id = r.auth_id;
 
-        if self.db.lock().await.get_challenge(&auth_id).await.is_none() {
-            return Err(Status::not_found(format!(
-                "challenge {} does not exist. please create a challenge first",
-                auth_id
-            )));
+        let db = self.db.lock().await;
+
+        let challenge = match db.get_challenge(&auth_id).await {
+            Some(c) => c,
+            None => {
+                return Err(Status::not_found(format!(
+                    "challenge {} does not exist. please create an authentication challenge first",
+                    auth_id
+                )))
+            }
         };
 
-        let resp = AuthenticationAnswerResponse {
-            session_id: "123".to_string(),
+        let user = match db.get_user(&challenge.lock().await.user_id).await {
+            Some(u) => u,
+            None => {
+                return Err(Status::not_found(format!(
+                    "user {} does not exist for challenge {}",
+                    challenge.lock().await.user_id,
+                    auth_id
+                )))
+            }
         };
-        Ok(Response::new(resp))
+
+        let mut challenge = challenge.lock().await;
+        let user = user.lock().await;
+        let params = &self.params;
+
+        let y1_prime = (params.g.modpow(&s, &params.p) * &user.y1.modpow(&challenge.c, &params.p))
+            .modpow(&BigInt::one(), &params.p);
+
+        let y2_prime = (params.h.modpow(&s, &params.p) * &user.y2.modpow(&challenge.c, &params.p))
+            .modpow(&BigInt::one(), &params.p);
+
+        let success = challenge.r1 == y1_prime && challenge.r2 == y2_prime;
+
+        if success {
+            challenge.finalize_challenge(s.clone());
+            let resp = AuthenticationAnswerResponse {
+                session_id: challenge.session_id.clone().unwrap(),
+            };
+            Ok(Response::new(resp))
+        } else {
+            Err(Status::failed_precondition(format!(
+                "authentication failed for challenge {}",
+                challenge.auth_id
+            )))
+        }
     }
 }
 
