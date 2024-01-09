@@ -157,6 +157,8 @@ impl auth_server::Auth for ZkpAuthService {
     }
 }
 
+/// Runs the Chaum-Pedersen ZKP authentication server
+/// This function will block until the server is shutdown
 pub async fn run_server(addr: &str, params: ChaumPedersenParams) {
     log::info!("starting server on {}", addr);
     let addr = addr.parse().unwrap();

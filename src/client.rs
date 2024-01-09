@@ -19,6 +19,8 @@ pub mod zkp_auth {
     tonic::include_proto!("zkp_auth");
 }
 
+/// Runs a Chaum-Pedersen ZKP Protocol client with the given parameters, against the server at the given address.
+/// This function will go through the entire protocol, including user registration and auth challenge and return the session ID if successful.
 pub async fn run_client(
     addr: &str,
     user: &str,

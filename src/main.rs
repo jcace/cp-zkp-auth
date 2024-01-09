@@ -96,7 +96,7 @@ async fn main() {
         Some(("generate", sub_matches)) => {
             let out = sub_matches.get_one::<String>("out");
 
-            let p = cp_params::generate_params();
+            let p = cp_params::generate_params().unwrap();
 
             match out {
                 Some(out) => {

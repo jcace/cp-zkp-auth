@@ -46,6 +46,7 @@ impl AuthChallenge {
     }
 }
 
+/// A simple in-memory database for storing users and challenges
 #[derive(Debug)]
 pub struct InMemoryDB {
     users: HashMap<String, Arc<Mutex<User>>>,
@@ -60,6 +61,7 @@ impl InMemoryDB {
         }
     }
 
+    /// Create a new user
     pub fn create_user(&mut self, username: String, y1: BigInt, y2: BigInt) {
         self.users.insert(
             username.clone(),
@@ -67,15 +69,18 @@ impl InMemoryDB {
         );
     }
 
+    /// Create a new challenge
     pub fn create_challenge(&mut self, challenge: AuthChallenge) {
         self.challenges
             .insert(challenge.auth_id.clone(), Arc::new(Mutex::new(challenge)));
     }
 
+    /// Get a user by username
     pub async fn get_user(&self, s: &str) -> Option<&Arc<Mutex<User>>> {
         self.users.get(s)
     }
 
+    /// Get a challenge by its auth_id
     pub async fn get_challenge(&self, s: &str) -> Option<&Arc<Mutex<AuthChallenge>>> {
         self.challenges.get(s)
     }

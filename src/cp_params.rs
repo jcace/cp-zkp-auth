@@ -1,8 +1,8 @@
+use anyhow::{anyhow, Result};
 use crypto_primes::generate_prime;
-use is_prime::is_prime;
-use num::{bigint::ToBigInt, BigInt, Integer};
+use num::{bigint::ToBigInt, BigInt, Integer, Num};
 use std::{fmt::Display, io::Write, ops::Sub, str::FromStr};
-static MAX_GENERATION_ATTEMPTS: i32 = 10;
+static MAX_GENERATION_ATTEMPTS: i32 = 50;
 
 static ENV_PARAMS_P: &str = "CP_P";
 static ENV_PARAMS_Q: &str = "CP_Q";
@@ -24,10 +24,12 @@ impl Display for ChaumPedersenParams {
 }
 
 impl ChaumPedersenParams {
+    /// Construct a new ChaumPedersenParams from provided parameters
     pub fn new(p: BigInt, q: BigInt, g: BigInt, h: BigInt) -> Self {
         ChaumPedersenParams { p, q, g, h }
     }
 
+    /// Attempt to construct a new ChaumPedersenParams from environment variables
     pub fn new_from_env() -> Self {
         let p = BigInt::from_str(
             &std::env::var(ENV_PARAMS_P)
@@ -56,6 +58,7 @@ impl ChaumPedersenParams {
         ChaumPedersenParams { p, q, g, h }
     }
 
+    /// Writes the parameters to the provided filename for use as a .env file
     pub fn to_env_file(
         &self,
         out: &mut std::fs::File,
@@ -76,12 +79,15 @@ impl ChaumPedersenParams {
         )
     }
 
+    /// Compute y1 and y2 : y1 = g^x mod p, y2 = h^x mod p
     pub fn y1_y2(&self, x: &BigInt) -> (BigInt, BigInt) {
         let y1 = self.g.modpow(x, &self.p);
         let y2 = self.h.modpow(x, &self.p);
 
         (y1, y2)
     }
+
+    /// Compute r1 and r2 : r1 = g^k mod p, r2 = h^k mod p
     pub fn r1_r2(&self, k: &BigInt) -> (BigInt, BigInt) {
         let r1 = self.g.modpow(k, &self.p);
         let r2 = self.h.modpow(k, &self.p);
@@ -89,6 +95,7 @@ impl ChaumPedersenParams {
         (r1, r2)
     }
 
+    /// Compute s : s = k - (c * x) mod q
     pub fn s(&self, k: &BigInt, c: &BigInt, x: &BigInt) -> BigInt {
         let c_mul_x = c * x;
         if k > &c_mul_x {
@@ -99,29 +106,22 @@ impl ChaumPedersenParams {
     }
 }
 
-/// Param generation
-pub fn generate_params() -> ChaumPedersenParams {
+/// Generates a new set of ChaumPedersenParams
+/// Note: if it fails to generate a valid prime after MAX_GENERATION_ATTEMPTS, it will return an error.
+/// As it is a random process, this may occur if generated primes do not the satisfy cyclic group constraint. Usually, in this case running the function again will succeed.
+pub fn generate_params() -> Result<ChaumPedersenParams> {
     let mut i = 0;
     loop {
         i += 1;
         if i > MAX_GENERATION_ATTEMPTS {
-            panic!("could not generate a valid prime after {} attempts. please try running the generator again", i);
+            Err(anyhow!("could not generate a valid prime after {} attempts. please try running the generator again", MAX_GENERATION_ATTEMPTS))?;
         }
-        // Create prime
+        // Create prime - 128 bits
         let p: crypto_bigint::Uint<2> = generate_prime(Some(128));
         let p_hex_str = p.to_string();
 
-        // ! Warning - we can only do this because it fits in u128!
-        // Not recommended as we should use the native type for such a large number instead of string-conversion, but just to get it going
-        let p_str = u128::from_str_radix(&p_hex_str, 16).unwrap().to_string();
+        let p = BigInt::from_str_radix(&p_hex_str, 16).unwrap();
 
-        log::debug!("trying prime: {}", p_str);
-        if !is_prime(&p_str) {
-            log::error!("{} is not prime. this should not happen!", p_str);
-            continue;
-        }
-
-        let p = BigInt::from_str(&p_str).unwrap();
         let test = is_cyclic_group_of_prime_order(&p);
         log::debug!("is group prime order? {}", test);
         if !test {
@@ -129,13 +129,13 @@ pub fn generate_params() -> ChaumPedersenParams {
         }
 
         let q = (&p)
-            .sub(1i128.to_bigint().unwrap())
-            .div_floor(&2i128.to_bigint().unwrap());
+            .sub(1u128.to_bigint().unwrap())
+            .div_floor(&2u128.to_bigint().unwrap());
 
         let g = 2u128.to_bigint().unwrap();
         let h = 3u128.to_bigint().unwrap();
 
-        return ChaumPedersenParams::new(p, q, g, h);
+        return Ok(ChaumPedersenParams::new(p, q, g, h));
     }
 }
 
