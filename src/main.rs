@@ -71,9 +71,15 @@ async fn main() {
                 }
             };
 
-            let password = sub_matches.get_one::<i64>("password");
-            let password = match password {
-                Some(p) => Some(p.to_owned()), // If password is already provided via args, use it.
+            let maybe_password_str = sub_matches.get_one::<String>("password");
+            let password = match maybe_password_str {
+                Some(p) => match p.parse::<i64>() {
+                    Ok(parsed_password) => Some(parsed_password),
+                    Err(_) => {
+                        eprintln!("Error: Password must be a number.");
+                        None
+                    }
+                },
                 None => {
                     println!("Enter password: ");
                     match read_password()

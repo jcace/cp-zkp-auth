@@ -1,0 +1,28 @@
+version: '3.9'
+
+services:
+  server:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    entrypoint: ["./zkp-auth", "server"]
+    command: ["-a", "0.0.0.0:8080"]
+    environment:
+      CP_P: ${CP_P}
+      CP_Q: ${CP_Q}
+      CP_G: ${CP_G}
+      CP_H: ${CP_H}
+
+  client:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    entrypoint: ["./zkp-auth", "client"]
+    command: ["-s", "server:8080", "-u", "user", "-p", "123"]
+    environment:
+      CP_P: ${CP_P}
+      CP_Q: ${CP_Q}
+      CP_G: ${CP_G}
+      CP_H: ${CP_H}
