@@ -1,11 +1,15 @@
-p = big prime
-g = generator
-h = generator (2)
-q = "prime order" i.e, what number where g^q mod p and h^q mod p both = 1 and q is smallest value > 0 that satisfies this
+# Chaum-Pedersen ZKP Auth Protocol
 
-https://crypto.stackexchange.com/questions/99262/chaum-pedersen-protocol
+This project implements the ZKP Chaum-Pedersen protocol in a very simple client-server architecture, using gRPC to define the interfaces between client and server.
 
-# Parameters
+## Prerequisites
+To build locally, you must have the following installed:
+
+- Rust v1.7.5
+- protobuf-compiler 
+- libprotobuf-dev
+
+## Parameters
 
 The Chaum-Pedersen protocol requires 4 parameters (P, Q, G, H) to be specified for operation. These parameters must be identical between both the Client and Server. This application will attempt to load these parameters from the environment at the following keys:
 ```env
@@ -15,39 +19,52 @@ CP_G
 CP_H
 ```
 
-If a `.env` file exists in the execution directory it will automatically be loaded. For convenience, a sample set of initial parameters is provided in the included `.env` file.
+If a `.env` file exists in the execution directory it will automatically be loaded. For convenience, a sample set of initial parameters is provided in the included `.env` file, and the 
 
-## Generating parameters
+### Generating New Parameters
 If you would like to generate fresh Chaum-Pedersen parameters, run
 ```bash
 ./zkp-auth generate -o .env # optional - output file path
 ```
 
-# Testing
+## Testing
 
 To run all tests, both integration and unit for the project, execure:
 ```bash
 cargo test
 ```
 
-## Client
-> Input: x (a number) password
+## Building
+The program binary may be built by running
 
+```bash
+make build
+```
 
-## scratchpad notes
-// https://docs.rs/static-dh-ecdh/latest/static_dh_ecdh/constants/constant.DH_GROUP_5_EXPONENT_LENGTH.html
-// RFC 3526 - https://www.rfc-editor.org/rfc/rfc3526#section-2
-// static DH_GROUP_5_PRIME: &str = "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3DC2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F83655D23DCA3AD961C62F356208552BB9ED529077096966D670C354E4ABC9804F1746C08CA237327FFFFFFFFFFFFFFFF";
-// static DH_GROUP_5_GENERATOR: usize = 2;
-// static DH_GROUP_5_EXPONENT_LENGTH: usize = 192;
+Output binary can then be found at `target/release/zkp-auth`
 
-/**
-*      p: BigInt::from_str("42765216643065397982265462252423826320512529931694366715111734768493812630447").unwrap(),
-       q: BigInt::from_str("21382608321532698991132731126211913160256264965847183357555867384246906315223").unwrap(),
-       g: BigInt::from_str("4").unwrap(),
-       h: BigInt::from_str("9").unwrap(),
-*/
+## Running
+
+### Server
+To run the zkp-auth server:
+```bash
+./zkp-auth server -l 0.0.0.0:8080 # optional -l specifies listen address
+```
+
+### Client
+To run a barebones zkp-auth client, which will attempt to register and prove a secret value with the server:
+```bash
+./zkp-auth client \
+  -s 127.0.0.1:8080 \ # optional server address (default: 127.0.0.1:8080) 
+  -u username \
+  -p 123 
+```
+
+> Note: providing both `-u` and `-p` flags will make the program run non-interactively. If they are ommitted, the user will be prompted to enter them at runtime.
 
 ## Improvements
 - Split up client/server into completely different packages for separate deployment (together now for ease of use / simplicity)
 - Backend user session tracking - can only register once. Maybe allow a method for user to overwrite their y1/y2 params
+- Module for proper database (i.e, persist to SQLite for instance, instead of just in-memory) 
+
+More Information 

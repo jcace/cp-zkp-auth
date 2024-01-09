@@ -116,8 +116,8 @@ pub fn generate_params() -> Result<ChaumPedersenParams> {
         if i > MAX_GENERATION_ATTEMPTS {
             Err(anyhow!("could not generate a valid prime after {} attempts. please try running the generator again", MAX_GENERATION_ATTEMPTS))?;
         }
-        // Create prime - 128 bits
-        let p: crypto_bigint::Uint<2> = generate_prime(Some(128));
+        // Create prime - 16 x 64 bit = 1024 bit in size
+        let p: crypto_bigint::Uint<16> = generate_prime(None);
         let p_hex_str = p.to_string();
 
         let p = BigInt::from_str_radix(&p_hex_str, 16).unwrap();
@@ -132,8 +132,14 @@ pub fn generate_params() -> Result<ChaumPedersenParams> {
             .sub(1u128.to_bigint().unwrap())
             .div_floor(&2u128.to_bigint().unwrap());
 
-        let g = 2u128.to_bigint().unwrap();
-        let h = 3u128.to_bigint().unwrap();
+        // ? for some reason, generating large _random_ numbers with this approach causes the Authentication to fail
+        // need more investigation into the reason why, but for now we'll just use some small, fixed v alues
+
+        // let g = OsRng.gen_bigint_range(&2i128.to_bigint().unwrap(), &q);
+        // let h = OsRng.gen_bigint_range(&g, &q);
+
+        let g = 5u128.to_bigint().unwrap();
+        let h = 7u128.to_bigint().unwrap();
 
         return Ok(ChaumPedersenParams::new(p, q, g, h));
     }

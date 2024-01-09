@@ -2,7 +2,7 @@
 mod integration_tests {
     use num_bigint::ToBigInt;
     use std::time::Duration;
-    use zkp_auth::client::run_client;
+    use zkp_auth::client::run_client_auth_check;
     use zkp_auth::cp_params::ChaumPedersenParams;
     use zkp_auth::server::run_server;
 
@@ -29,8 +29,8 @@ mod integration_tests {
         // Wait for the server to start
         tokio::time::sleep(Duration::from_secs(1)).await;
 
-        // Run the client with some parameters
-        let res = run_client(SERVER_ADDR, TEST_USER, TEST_PASSWORD, test_params.clone()).await;
+        let res =
+            run_client_auth_check(SERVER_ADDR, TEST_USER, TEST_PASSWORD, test_params.clone()).await;
 
         assert!(res.is_ok());
         assert!(!res.unwrap().is_empty());

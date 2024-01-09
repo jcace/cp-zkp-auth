@@ -9,7 +9,6 @@ use zkp_auth::{client, cp_params, server};
 async fn main() {
     env_logger::init();
     dotenv().ok(); // for convenience, auto-load from .env file if it exists
-    let params = cp_params::ChaumPedersenParams::new_from_env();
 
     let matches = command!()
         .subcommand_required(true)
@@ -46,6 +45,7 @@ async fn main() {
 
     match matches.subcommand() {
         Some(("server", sub_matches)) => {
+            let params = cp_params::ChaumPedersenParams::new_from_env();
             let addr = sub_matches
                 .get_one::<String>("addr")
                 .expect("server listen address is required");
@@ -53,6 +53,7 @@ async fn main() {
             server::run_server(addr, params).await;
         }
         Some(("client", sub_matches)) => {
+            let params = cp_params::ChaumPedersenParams::new_from_env();
             let addr = sub_matches
                 .get_one::<String>("server")
                 .expect("server address is required");
@@ -95,7 +96,7 @@ async fn main() {
                 }
             };
 
-            client::run_client(addr, &username.unwrap(), &password.unwrap(), params)
+            client::run_client_auth_check(addr, &username.unwrap(), &password.unwrap(), params)
                 .await
                 .unwrap();
         }
