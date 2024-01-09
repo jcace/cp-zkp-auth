@@ -134,13 +134,13 @@ impl auth_server::Auth for ZkpAuthService {
         let user = user.lock().await;
         let params = &self.params;
 
-        let y1_prime = (params.g.modpow(&s, &params.p) * &user.y1.modpow(&challenge.c, &params.p))
+        let r1_prime = (params.g.modpow(&s, &params.p) * &user.y1.modpow(&challenge.c, &params.p))
             .modpow(&BigInt::one(), &params.p);
 
-        let y2_prime = (params.h.modpow(&s, &params.p) * &user.y2.modpow(&challenge.c, &params.p))
+        let r2_prime = (params.h.modpow(&s, &params.p) * &user.y2.modpow(&challenge.c, &params.p))
             .modpow(&BigInt::one(), &params.p);
 
-        let success = challenge.r1 == y1_prime && challenge.r2 == y2_prime;
+        let success = challenge.r1 == r1_prime && challenge.r2 == r2_prime;
 
         if success {
             challenge.finalize_challenge(s.clone());

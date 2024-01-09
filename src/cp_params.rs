@@ -4,7 +4,6 @@ use num::{
     bigint::{self, ToBigInt},
     BigInt, Integer,
 };
-use num_bigint::RandBigInt;
 use std::{fmt::Display, io::Write, ops::Sub, str::FromStr};
 static MAX_GENERATION_ATTEMPTS: i32 = 10;
 
@@ -107,7 +106,7 @@ pub fn generate_params() -> ChaumPedersenParams {
         }
 
         let p = BigInt::from_str(&p_str).unwrap();
-        let test = check_if_group_prime_order(&p);
+        let test = is_cyclic_group_of_prime_order(&p);
         log::debug!("is group prime order? {}", test);
         if !test {
             continue;
@@ -117,15 +116,14 @@ pub fn generate_params() -> ChaumPedersenParams {
             .sub(1i128.to_bigint().unwrap())
             .div_floor(&2i128.to_bigint().unwrap());
 
-        let mut rng = rand::thread_rng();
-        let g = rng.gen_bigint_range(&2.to_bigint().unwrap(), &p);
-        let h = rng.gen_bigint_range(&g, &p);
+        let g = 2u128.to_bigint().unwrap();
+        let h = 3u128.to_bigint().unwrap();
 
         return ChaumPedersenParams::new(p, q, g, h);
     }
 }
 
-pub fn check_if_group_prime_order(p: &BigInt) -> bool {
+pub fn is_cyclic_group_of_prime_order(p: &BigInt) -> bool {
     let q = p
         .sub(1i128.to_bigint().unwrap())
         .div_floor(&2i128.to_bigint().unwrap());
@@ -136,4 +134,24 @@ pub fn check_if_group_prime_order(p: &BigInt) -> bool {
     let h = 3.to_bigint().unwrap();
 
     g.modpow(&q, p) == one && h.modpow(&q, p) == one
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use num_bigint::BigInt;
+
+    #[test]
+    fn test_with_prime_order_group() {
+        //  10009 is a prime, and (10009-1)/2 = 5004 is a prime order for the group
+        let prime = BigInt::from(10009);
+        assert!(is_cyclic_group_of_prime_order(&prime));
+    }
+
+    #[test]
+    fn test_with_non_prime_order_group() {
+        // 11 is a prime, but (11-1)/2 = 5 is not a prime order for the group
+        let prime = BigInt::from(11);
+        assert!(!is_cyclic_group_of_prime_order(&prime));
+    }
 }

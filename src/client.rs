@@ -1,4 +1,6 @@
-use num::bigint::ToBigInt;
+use num::{bigint::ToBigInt, traits::ToBytes};
+use num_bigint::{BigInt, Sign};
+use rand_core::{OsRng, RngCore};
 use tonic::transport::Channel;
 
 use crate::{
@@ -16,28 +18,38 @@ pub mod zkp_auth {
 }
 
 pub async fn run_client(addr: &str, user: &str, secret: &i64) {
-    let mut c = Client::new(addr, user.to_string()).await;
+    let mut client = Client::new(addr, user.to_string()).await;
 
+    let x = secret.to_bigint().unwrap();
     let params = cp_params::ChaumPedersenParams::new_from_env();
-    let (y1, y2) = params.y1_y2(&secret.to_bigint().unwrap());
+    let (y1, y2) = params.y1_y2(&x);
 
-    let res = c
+    let res = client
         .register(user, y1.to_bytes_be().1, y2.to_bytes_be().1)
         .await;
 
-    println!("res: {:?}", res);
+    log::trace!("RegisterResponse: {:?}", res);
 
-    let res = c
-        .create_authentication_challenge(4i64.to_be_bytes().to_vec(), 5i64.to_be_bytes().to_vec())
+    let k = OsRng.next_u64().to_bigint().unwrap();
+    let (r1, r2) = params.r1_r2(&k);
+
+    let res = client
+        .create_authentication_challenge(r1.to_be_bytes().to_vec(), r2.to_be_bytes().to_vec())
         .await;
-    println!("res: {:?}", res);
+
+    log::trace!("AuthenticationChallengeResponse: {:?}", res);
 
     let auth_id = res.auth_id;
+    let c = BigInt::from_bytes_be(Sign::Plus, &res.c);
+    let s = params.s(&k, &c, &x);
 
-    let res = c
-        .verify_authentication(4i64.to_be_bytes().to_vec(), auth_id)
+    let res = client
+        .verify_authentication(s.to_be_bytes().to_vec(), auth_id)
         .await;
-    println!("res: {:?}", res);
+
+    log::trace!("AuthenticationAnswerResponse: {:?}", res);
+
+    println!("Authentication successful. Session ID: {}", res.session_id);
 }
 
 pub struct Client {
