@@ -3,6 +3,9 @@ name = "zkp-auth"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+crate-type = ["lib"]
+
 [dependencies]
 crypto-bigint = "0.5.5"
 crypto-primes = "0.5.0"
@@ -20,6 +23,7 @@ num-bigint = { version = "0.4", features = ["rand"] }
 dotenv = "0.15.0"
 uuid = { version = "1.6.1", features = ["v4"] }
 rand_core = "0.6.4"
+anyhow = "1.0.79"
 
 [build-dependencies]
 tonic-build = "0.10.2"

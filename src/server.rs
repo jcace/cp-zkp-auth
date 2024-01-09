@@ -7,7 +7,7 @@ use tokio::sync::Mutex;
 use tonic::{transport::Server, Request, Response, Status};
 
 use crate::{
-    cp_params::{self, ChaumPedersenParams},
+    cp_params::ChaumPedersenParams,
     db::{AuthChallenge, InMemoryDB},
 };
 
@@ -157,11 +157,10 @@ impl auth_server::Auth for ZkpAuthService {
     }
 }
 
-pub async fn run_server(addr: &str) {
+pub async fn run_server(addr: &str, params: ChaumPedersenParams) {
     log::info!("starting server on {}", addr);
     let addr = addr.parse().unwrap();
 
-    let params = cp_params::ChaumPedersenParams::new_from_env();
     let service = ZkpAuthService::new(params);
 
     Server::builder()

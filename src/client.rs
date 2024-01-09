@@ -1,3 +1,5 @@
+use anyhow::{Context, Result};
+
 use num::{bigint::ToBigInt, traits::ToBytes};
 use num_bigint::{BigInt, Sign};
 use rand_core::{OsRng, RngCore};
@@ -5,7 +7,7 @@ use tonic::transport::Channel;
 
 use crate::{
     client::zkp_auth::{auth_client::AuthClient, AuthenticationAnswerRequest},
-    cp_params,
+    cp_params::ChaumPedersenParams,
 };
 
 use self::zkp_auth::{
@@ -17,11 +19,15 @@ pub mod zkp_auth {
     tonic::include_proto!("zkp_auth");
 }
 
-pub async fn run_client(addr: &str, user: &str, secret: &i64) {
+pub async fn run_client(
+    addr: &str,
+    user: &str,
+    secret: &i64,
+    params: ChaumPedersenParams,
+) -> Result<String> {
     let mut client = Client::new(addr, user.to_string()).await;
 
     let x = secret.to_bigint().unwrap();
-    let params = cp_params::ChaumPedersenParams::new_from_env();
     let (y1, y2) = params.y1_y2(&x);
 
     let res = client
@@ -35,7 +41,7 @@ pub async fn run_client(addr: &str, user: &str, secret: &i64) {
 
     let res = client
         .create_authentication_challenge(r1.to_be_bytes().to_vec(), r2.to_be_bytes().to_vec())
-        .await;
+        .await?;
 
     log::trace!("AuthenticationChallengeResponse: {:?}", res);
 
@@ -45,11 +51,12 @@ pub async fn run_client(addr: &str, user: &str, secret: &i64) {
 
     let res = client
         .verify_authentication(s.to_be_bytes().to_vec(), auth_id)
-        .await;
+        .await?;
 
     log::trace!("AuthenticationAnswerResponse: {:?}", res);
 
-    println!("Authentication successful. Session ID: {}", res.session_id);
+    println!("Authentication successful. Session {}", res.session_id);
+    Ok(res.session_id)
 }
 
 pub struct Client {
@@ -66,23 +73,32 @@ impl Client {
         Client { c, user }
     }
 
-    pub async fn register(&mut self, user: &str, y1: Vec<u8>, y2: Vec<u8>) -> RegisterResponse {
+    pub async fn register(
+        &mut self,
+        user: &str,
+        y1: Vec<u8>,
+        y2: Vec<u8>,
+    ) -> Result<RegisterResponse> {
         let request = tonic::Request::new(RegisterRequest {
             user: user.to_string(),
             y1,
             y2,
         });
 
-        let response = self.c.register(request).await.unwrap();
+        let response = self
+            .c
+            .register(request)
+            .await
+            .with_context(|| format!("Failed to register user {}", user))?;
 
-        response.into_inner()
+        Ok(response.into_inner())
     }
 
     pub async fn create_authentication_challenge(
         &mut self,
         r1: Vec<u8>,
         r2: Vec<u8>,
-    ) -> AuthenticationChallengeResponse {
+    ) -> Result<AuthenticationChallengeResponse> {
         let request = tonic::Request::new(AuthenticationChallengeRequest {
             user: self.user.to_string(),
             r1,
@@ -93,20 +109,29 @@ impl Client {
             .c
             .create_authentication_challenge(request)
             .await
-            .unwrap();
+            .with_context(|| {
+                format!(
+                    "Failed to create authentication challenge for user {}",
+                    self.user
+                )
+            })?;
 
-        response.into_inner()
+        Ok(response.into_inner())
     }
 
     pub async fn verify_authentication(
         &mut self,
         s: Vec<u8>,
         auth_id: String,
-    ) -> AuthenticationAnswerResponse {
+    ) -> Result<AuthenticationAnswerResponse> {
         let request = tonic::Request::new(AuthenticationAnswerRequest { auth_id, s });
 
-        let response = self.c.verify_authentication(request).await.unwrap();
+        let response = self
+            .c
+            .verify_authentication(request)
+            .await
+            .with_context(|| format!("Failed to verify authentication for user {}", self.user))?;
 
-        response.into_inner()
+        Ok(response.into_inner())
     }
 }

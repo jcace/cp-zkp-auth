@@ -5,17 +5,33 @@ q = "prime order" i.e, what number where g^q mod p and h^q mod p both = 1 and q 
 
 https://crypto.stackexchange.com/questions/99262/chaum-pedersen-protocol
 
-## Generating Parameters
-Shared parameters for the protocol are loaded in via the environment (or, a `.env` file in the same directory). A sample set of initial parameters is provided in the included `.env` file, however if you would like to generate fresh ones you can run
-```bash
-./zkp-auth generate .env # output file path
+# Parameters
+
+The Chaum-Pedersen protocol requires 4 parameters (P, Q, G, H) to be specified for operation. These parameters must be identical between both the Client and Server. This application will attempt to load these parameters from the environment at the following keys:
+```env
+CP_P
+CP_Q
+CP_G
+CP_H
 ```
 
+If a `.env` file exists in the execution directory it will automatically be loaded. For convenience, a sample set of initial parameters is provided in the included `.env` file.
+
+## Generating parameters
+If you would like to generate fresh Chaum-Pedersen parameters, run
+```bash
+./zkp-auth generate -o .env # optional - output file path
+```
+
+# Testing
+
+To run all tests, both integration and unit for the project, execure:
+```bash
+cargo test
+```
 
 ## Client
 > Input: x (a number) password
-
-Client generates params - more trustless than server side generation?
 
 
 ## scratchpad notes
