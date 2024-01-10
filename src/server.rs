@@ -3,11 +3,11 @@ use std::sync::Arc;
 use num::{bigint::Sign, BigInt, One};
 use num_bigint::ToBigInt;
 use rand_core::{OsRng, RngCore};
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 use tonic::{transport::Server, Request, Response, Status};
 
 use crate::{
-    cp_params::ChaumPedersenParams,
+    chaum_pedersen::ChaumPedersenParams,
     db::{AuthChallenge, InMemoryDB},
 };
 
@@ -24,14 +24,14 @@ pub mod zkp_auth {
 #[derive(Debug)]
 pub struct ZkpAuthService {
     params: ChaumPedersenParams,
-    db: Arc<Mutex<InMemoryDB>>,
+    db: Arc<RwLock<InMemoryDB>>,
 }
 
 impl ZkpAuthService {
     pub fn new(params: ChaumPedersenParams) -> Self {
         ZkpAuthService {
             params,
-            db: Arc::new(Mutex::new(InMemoryDB::new())),
+            db: Arc::new(RwLock::new(InMemoryDB::new())),
         }
     }
 }
@@ -50,7 +50,7 @@ impl auth_server::Auth for ZkpAuthService {
         let y2 = BigInt::from_bytes_be(Sign::Plus, &r.y2);
         let user_id = r.user;
 
-        let mut db = self.db.lock().await;
+        let mut db = self.db.write().await;
         if db.get_user(&user_id).await.is_some() {
             return Err(Status::already_exists(format!(
                 "user {} already exists",
@@ -73,7 +73,7 @@ impl auth_server::Auth for ZkpAuthService {
         let r = request.into_inner();
         let user_id = r.user;
 
-        if self.db.lock().await.get_user(&user_id).await.is_none() {
+        if self.db.read().await.get_user(&user_id).await.is_none() {
             return Err(Status::not_found(format!(
                 "user {} does not exist. please register first",
                 user_id
@@ -88,7 +88,7 @@ impl auth_server::Auth for ZkpAuthService {
         let new_challenge = AuthChallenge::new(user_id, r1, r2, c.to_owned());
         let new_challenge_id = new_challenge.auth_id.clone();
 
-        self.db.lock().await.create_challenge(new_challenge);
+        self.db.write().await.create_challenge(new_challenge);
 
         let resp = AuthenticationChallengeResponse {
             auth_id: new_challenge_id,
@@ -107,7 +107,7 @@ impl auth_server::Auth for ZkpAuthService {
         let s = BigInt::from_bytes_be(Sign::Plus, &r.s);
         let auth_id = r.auth_id;
 
-        let db = self.db.lock().await;
+        let db = self.db.read().await;
 
         let challenge = match db.get_challenge(&auth_id).await {
             Some(c) => c,

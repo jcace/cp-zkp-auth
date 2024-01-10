@@ -9,7 +9,7 @@ services:
       - "8080:8080"
     entrypoint: ["./zkp-auth", "server"]
     command: ["-a", "0.0.0.0:8080"]
-    environment:
+    environment: # Note the local file `.env` will be loaded by default, but this ensures environment variables are captured too
       CP_P: ${CP_P}
       CP_Q: ${CP_Q}
       CP_G: ${CP_G}
@@ -21,7 +21,7 @@ services:
       dockerfile: Dockerfile
     entrypoint: ["./zkp-auth", "client"]
     command: ["-s", "server:8080", "-u", "user", "-p", "123"]
-    environment:
+    environment: # Note the local file `.env` will be loaded by default, but this ensures environment variables are captured too
       CP_P: ${CP_P}
       CP_Q: ${CP_Q}
       CP_G: ${CP_G}

@@ -3,7 +3,7 @@ use std::{env, fs::File, io::stdin};
 use clap::{command, Arg, Command};
 use dotenv::dotenv;
 use rpassword::read_password;
-use zkp_auth::{client, cp_params, server};
+use zkp_auth::{chaum_pedersen, client, server};
 
 #[tokio::main]
 async fn main() {
@@ -45,7 +45,7 @@ async fn main() {
 
     match matches.subcommand() {
         Some(("server", sub_matches)) => {
-            let params = cp_params::ChaumPedersenParams::new_from_env();
+            let params = chaum_pedersen::ChaumPedersenParams::new_from_env();
             let addr = sub_matches
                 .get_one::<String>("addr")
                 .expect("server listen address is required");
@@ -53,7 +53,7 @@ async fn main() {
             server::run_server(addr, params).await;
         }
         Some(("client", sub_matches)) => {
-            let params = cp_params::ChaumPedersenParams::new_from_env();
+            let params = chaum_pedersen::ChaumPedersenParams::new_from_env();
             let addr = sub_matches
                 .get_one::<String>("server")
                 .expect("server address is required");
@@ -103,7 +103,7 @@ async fn main() {
         Some(("generate", sub_matches)) => {
             let out = sub_matches.get_one::<String>("out");
 
-            let p = cp_params::generate_params().unwrap();
+            let p = chaum_pedersen::generate_params().unwrap();
 
             match out {
                 Some(out) => {

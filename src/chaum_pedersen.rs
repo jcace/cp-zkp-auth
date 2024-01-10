@@ -2,6 +2,7 @@ use anyhow::{anyhow, Result};
 use crypto_primes::generate_prime;
 use num::{bigint::ToBigInt, BigInt, Integer, Num};
 use std::{fmt::Display, io::Write, ops::Sub, str::FromStr};
+
 static MAX_GENERATION_ATTEMPTS: i32 = 50;
 
 static ENV_PARAMS_P: &str = "CP_P";
@@ -122,7 +123,7 @@ pub fn generate_params() -> Result<ChaumPedersenParams> {
 
         let p = BigInt::from_str_radix(&p_hex_str, 16).unwrap();
 
-        let test = is_cyclic_group_of_prime_order(&p);
+        let test = check_generators_cyclic_group_of_prime_order(&p);
         log::debug!("is group prime order? {}", test);
         if !test {
             continue;
@@ -132,26 +133,22 @@ pub fn generate_params() -> Result<ChaumPedersenParams> {
             .sub(1u128.to_bigint().unwrap())
             .div_floor(&2u128.to_bigint().unwrap());
 
-        // ? for some reason, generating large _random_ numbers with this approach causes the Authentication to fail
-        // need more investigation into the reason why, but for now we'll just use some small, fixed v alues
-
-        // let g = OsRng.gen_bigint_range(&2i128.to_bigint().unwrap(), &q);
-        // let h = OsRng.gen_bigint_range(&g, &q);
-
-        let g = 5u128.to_bigint().unwrap();
-        let h = 7u128.to_bigint().unwrap();
+        let g = 2u128.to_bigint().unwrap();
+        let h = 3u128.to_bigint().unwrap();
 
         return Ok(ChaumPedersenParams::new(p, q, g, h));
     }
 }
 
-pub fn is_cyclic_group_of_prime_order(p: &BigInt) -> bool {
+/// Checks if the provided prime is a cyclic group of prime order
+/// Only checks for generators 2 and 3
+pub fn check_generators_cyclic_group_of_prime_order(p: &BigInt) -> bool {
     let q = p
         .sub(1i128.to_bigint().unwrap())
         .div_floor(&2i128.to_bigint().unwrap());
     let one = 1i128.to_bigint().unwrap();
 
-    // any two generators other than 1 should both have % q == 1
+    // 2,3 are both generators if g^q mod p == 1 and h^q mod p == 1
     let g = 2.to_bigint().unwrap();
     let h = 3.to_bigint().unwrap();
 
@@ -180,8 +177,8 @@ mod tests {
         let x = BigInt::from_u64(3).unwrap();
         let (y1, y2) = params.y1_y2(&x);
 
-        assert_eq!(y1, BigInt::from_u64(8).unwrap()); // 2 ^ 3
-        assert_eq!(y2, BigInt::from_u64(27).unwrap()); // 3 ^ 3
+        assert_eq!(y1, BigInt::from_u64(8).unwrap()); // 2 ^ 3 = 8
+        assert_eq!(y2, BigInt::from_u64(27).unwrap()); // 3 ^ 3 = 27
     }
 
     #[test]
@@ -209,13 +206,13 @@ mod tests {
     fn test_with_prime_order_group() {
         //  10009 is a prime, and (10009-1)/2 = 5004 is a prime order for the group
         let prime = BigInt::from(10009);
-        assert!(is_cyclic_group_of_prime_order(&prime));
+        assert!(check_generators_cyclic_group_of_prime_order(&prime));
     }
 
     #[test]
     fn test_with_non_prime_order_group() {
-        // 11 is a prime, but (11-1)/2 = 5 is not a prime order for the group
-        let prime = BigInt::from(11);
-        assert!(!is_cyclic_group_of_prime_order(&prime));
+        // 31 is a prime, but (31-1)/2 = 15, 3 ^ 15 mod 31 != 1 so it will not work
+        let prime = BigInt::from(31);
+        assert!(!check_generators_cyclic_group_of_prime_order(&prime));
     }
 }

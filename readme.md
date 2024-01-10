@@ -5,7 +5,7 @@ This project implements the ZKP Chaum-Pedersen protocol in a very simple client-
 ## Prerequisites
 To build locally, you must have the following installed:
 
-- Rust v1.7.5
+- rust v1.7.5
 - protobuf-compiler 
 - libprotobuf-dev
 
@@ -44,6 +44,7 @@ make build
 Output binary can then be found at `target/release/zkp-auth`
 
 ## Running
+> Note: To see more verbose logging output, set `RUST_LOG=trace` before running
 
 ### Server
 To run the zkp-auth server:
@@ -60,11 +61,40 @@ To run a barebones zkp-auth client, which will attempt to register and prove a s
   -p 123 
 ```
 
+#### Expected Output
+```bash
+Authentication successful. Session ca6e29d9-4234-4387-a692-65c7789a373f # unique session UUID
+```
+
 > Note: providing both `-u` and `-p` flags will make the program run non-interactively. If they are ommitted, the user will be prompted to enter them at runtime.
 
-## Improvements
-- Split up client/server into completely different packages for separate deployment (together now for ease of use / simplicity)
-- Backend user session tracking - can only register once. Maybe allow a method for user to overwrite their y1/y2 params
-- Module for proper database (i.e, persist to SQLite for instance, instead of just in-memory) 
+## Running in Docker
+For convenience, a `docker-compose` file is included which will build & run both the client and server applications in separate containers. 
 
-More Information 
+This `docker-compose` captures the _Parameters_ from the environment (or, `.env` file by default). So, before building please ensure you either have a `.env` file or parameters exist in the current shell's environment.
+
+To run, execute:
+
+```bash
+docker compose up
+```
+
+
+# Design Documentation
+
+For the purposes of this challenge, implementation of this protocol is kept very simple and lightweight.  
+
+- All code relevant to the server is found in `server.rs`, while client code is in `client.rs`. 
+- Parameters, parameter generation, and math operations are found in `chaum_pedersen.rs`
+- User & auth session state is simply stored in-memory using hashmaps - this is found in `db.rs`.
+- `main.rs` exposes a command-line interface for interacting with the client and server.
+- `tests/integration_test.rs` runs both client and server, and verifies that the entire proof process and communication works end-to-end
+
+
+## Potential Improvements
+- Backend user session management -  currently, a user can only register once. Allow a method for user to overwrite their y1/y2 params. 
+- Generalize `db.rs` into a set of traits, to allow for other databases to be used (i.e, persist to SQLite, instead of just in-memory) 
+- Support for [RFC5114 MODP groups with generators](https://www.rfc-editor.org/rfc/rfc5114) - parse Hex values from ENV instead of numbers
+- Decoupling/refactoring the Chaum-Pedersen functionality out of `server.rs` , and into a separate library so it could be used with a different front-end (ex, websockets instead of gRPC)
+- CLI: Client-side state persistence, allowing multiple proofs to be registered under a single `user` / `y1/y2`
+  - This would also require more CLI commands to be added, but exact implementation would depend on final use case requirements

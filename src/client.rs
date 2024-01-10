@@ -5,14 +5,12 @@ use num_bigint::{BigInt, Sign};
 use rand_core::{OsRng, RngCore};
 use tonic::transport::Channel;
 
-use crate::{
-    client::zkp_auth::{auth_client::AuthClient, AuthenticationAnswerRequest},
-    cp_params::ChaumPedersenParams,
-};
+use crate::chaum_pedersen::ChaumPedersenParams;
 
 use self::zkp_auth::{
-    AuthenticationAnswerResponse, AuthenticationChallengeRequest, AuthenticationChallengeResponse,
-    RegisterRequest, RegisterResponse,
+    auth_client::AuthClient, AuthenticationAnswerRequest, AuthenticationAnswerResponse,
+    AuthenticationChallengeRequest, AuthenticationChallengeResponse, RegisterRequest,
+    RegisterResponse,
 };
 
 pub mod zkp_auth {
