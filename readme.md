@@ -19,17 +19,17 @@ CP_G
 CP_H
 ```
 
-If a `.env` file exists in the execution directory it will automatically be loaded. For convenience, a sample set of initial parameters is provided in the included `.env` file, and the 
+If a `.env` file exists in the execution directory it will automatically be loaded. For convenience, a sample set of initial parameters is provided in the included `.env` file in the repository.
 
 ### Generating New Parameters
 If you would like to generate fresh Chaum-Pedersen parameters, run
 ```bash
-./zkp-auth generate -o .env # optional - output file path
+./zkp-auth generate -o .env # optional -o : output file path
 ```
 
 ## Testing
 
-To run all tests, both integration and unit for the project, execure:
+To run all tests, both integration and unit for the project, execute:
 ```bash
 cargo test
 ```
@@ -47,13 +47,13 @@ Output binary can then be found at `target/release/zkp-auth`
 > Note: To see more verbose logging output, set `RUST_LOG=trace` before running
 
 ### Server
-To run the zkp-auth server:
+Run the zkp-auth server:
 ```bash
-./zkp-auth server -l 0.0.0.0:8080 # optional -l specifies listen address
+./zkp-auth server -l 0.0.0.0:8080 # optional -l : specifies listen address
 ```
 
 ### Client
-To run a barebones zkp-auth client, which will attempt to register and prove a secret value with the server:
+Run a barebones zkp-auth client, which will attempt to register and prove a secret value with the server:
 ```bash
 ./zkp-auth client \
   -s 127.0.0.1:8080 \ # optional server address (default: 127.0.0.1:8080) 
