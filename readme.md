@@ -98,3 +98,4 @@ For the purposes of this challenge, implementation of this protocol is kept very
 - Decoupling/refactoring the Chaum-Pedersen functionality out of `server.rs` , and into a separate library so it could be used with a different front-end (ex, websockets instead of gRPC)
 - CLI: Client-side state persistence, allowing multiple proofs to be registered under a single `user` / `y1/y2`
   - This would also require more CLI commands to be added, but exact implementation would depend on final use case requirements
+- More extensive documentation and generate a comprehensive `rustdoc` for the project
