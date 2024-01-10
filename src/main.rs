@@ -1,7 +1,8 @@
-use std::{env, fs::File, io::stdin};
+use std::{env, fs::File, io::stdin, str::FromStr};
 
 use clap::{command, Arg, Command};
 use dotenv::dotenv;
+use num_bigint::BigInt;
 use rpassword::read_password;
 use zkp_auth::{chaum_pedersen, client, server};
 
@@ -74,7 +75,7 @@ async fn main() {
 
             let maybe_password_str = sub_matches.get_one::<String>("password");
             let password = match maybe_password_str {
-                Some(p) => match p.parse::<i64>() {
+                Some(p) => match BigInt::from_str(p) {
                     Ok(parsed_password) => Some(parsed_password),
                     Err(_) => {
                         eprintln!("Error: Password must be a number.");
@@ -85,7 +86,7 @@ async fn main() {
                     println!("Enter password: ");
                     match read_password()
                         .expect("Failed to read password")
-                        .parse::<i64>()
+                        .parse::<BigInt>()
                     {
                         Ok(parsed_password) => Some(parsed_password),
                         Err(_) => {

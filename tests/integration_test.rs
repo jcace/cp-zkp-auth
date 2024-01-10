@@ -8,7 +8,6 @@ mod integration_tests {
 
     static SERVER_ADDR: &str = "127.0.0.1:8181";
     static TEST_USER: &str = "test_user";
-    static TEST_PASSWORD: &i64 = &64;
 
     fn create_test_params() -> ChaumPedersenParams {
         // Example parameters (usually these should be large prime numbers)
@@ -23,6 +22,7 @@ mod integration_tests {
     #[tokio::test]
     async fn test_end_to_end_functionality() {
         let test_params = create_test_params();
+        let test_password = &64.to_bigint().unwrap();
         // Spin up the server
         let server_thread = tokio::spawn(run_server(SERVER_ADDR, test_params.clone()));
 
@@ -30,7 +30,7 @@ mod integration_tests {
         tokio::time::sleep(Duration::from_millis(200)).await;
 
         let res =
-            run_client_auth_check(SERVER_ADDR, TEST_USER, TEST_PASSWORD, test_params.clone()).await;
+            run_client_auth_check(SERVER_ADDR, TEST_USER, test_password, test_params.clone()).await;
 
         assert!(res.is_ok());
         assert!(!res.unwrap().is_empty());

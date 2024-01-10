@@ -22,13 +22,12 @@ pub mod zkp_auth {
 pub async fn run_client_auth_check(
     addr: &str,
     user: &str,
-    secret: &i64,
+    secret: &BigInt,
     params: ChaumPedersenParams,
 ) -> Result<String> {
     let mut client = Client::new(addr, user.to_string()).await;
 
-    let x = secret.to_bigint().unwrap();
-    let (y1, y2) = params.y1_y2(&x);
+    let (y1, y2) = params.y1_y2(secret);
 
     let res = client
         .register(user, y1.to_bytes_be().1, y2.to_bytes_be().1)
@@ -47,7 +46,7 @@ pub async fn run_client_auth_check(
 
     let auth_id = res.auth_id;
     let c = BigInt::from_bytes_be(Sign::Plus, &res.c);
-    let s = params.s(&k, &c, &x);
+    let s = params.s(&k, &c, secret);
 
     let res = client
         .verify_authentication(s.to_be_bytes().to_vec(), auth_id)

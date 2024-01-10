@@ -92,6 +92,7 @@ For the purposes of this challenge, implementation of this protocol is kept very
 
 
 ## Potential Improvements
+- Hash user password and then convert to BigInt. Using a fixed-length hash (such as SHA256), enable arbitrary inputs to be proven
 - Backend user session management -  currently, a user can only register once. Allow a method for user to overwrite their y1/y2 params. 
 - Generalize `db.rs` into a set of traits, to allow for other databases to be used (i.e, persist to SQLite, instead of just in-memory) 
 - Support for [RFC5114 MODP groups with generators](https://www.rfc-editor.org/rfc/rfc5114) - parse Hex values from ENV instead of numbers

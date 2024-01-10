@@ -1,9 +1,9 @@
 use anyhow::{anyhow, Result};
 use crypto_primes::generate_prime;
-use num::{bigint::ToBigInt, BigInt, Integer, Num};
+use num::{bigint::ToBigInt, BigInt, Integer, Num, One};
 use std::{fmt::Display, io::Write, ops::Sub, str::FromStr};
 
-static MAX_GENERATION_ATTEMPTS: i32 = 50;
+static MAX_GENERATION_ATTEMPTS: u8 = 50;
 
 static ENV_PARAMS_P: &str = "CP_P";
 static ENV_PARAMS_Q: &str = "CP_Q";
@@ -130,7 +130,7 @@ pub fn generate_params() -> Result<ChaumPedersenParams> {
         }
 
         let q = (&p)
-            .sub(1u128.to_bigint().unwrap())
+            .sub(&BigInt::one())
             .div_floor(&2u128.to_bigint().unwrap());
 
         let g = 2u128.to_bigint().unwrap();
@@ -143,16 +143,13 @@ pub fn generate_params() -> Result<ChaumPedersenParams> {
 /// Checks if the provided prime is a cyclic group of prime order
 /// Only checks for generators 2 and 3
 pub fn check_generators_cyclic_group_of_prime_order(p: &BigInt) -> bool {
-    let q = p
-        .sub(1i128.to_bigint().unwrap())
-        .div_floor(&2i128.to_bigint().unwrap());
-    let one = 1i128.to_bigint().unwrap();
+    let q = p.sub(&BigInt::one()).div_floor(&2u128.to_bigint().unwrap());
 
     // 2,3 are both generators if g^q mod p == 1 and h^q mod p == 1
     let g = 2.to_bigint().unwrap();
     let h = 3.to_bigint().unwrap();
 
-    g.modpow(&q, p) == one && h.modpow(&q, p) == one
+    g.modpow(&q, p) == BigInt::one() && h.modpow(&q, p) == BigInt::one()
 }
 
 #[cfg(test)]
